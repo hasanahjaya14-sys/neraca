@@ -545,19 +545,22 @@
                 </div>
 
                 {{-- User --}}
-                <div class="user-pill">
-                    <div class="user-avatar">
-                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
-                    </div>
-                    <div class="user-info">
-                        <div class="user-name">
-                            {{ auth()->user()->name ?? 'User' }}
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="user-pill">
+                        <div class="user-avatar">
+                            {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
                         </div>
-                        <div class="user-role">
-                            {{ ucfirst(auth()->user()->role ?? 'provinsi') }}
+                        <div class="user-info">
+                            <div class="user-name">
+                                {{ auth()->user()->name ?? 'User' }}
+                            </div>
+                            <div class="user-role">
+                                {{ ucfirst(auth()->user()->role ?? 'provinsi') }}
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </button>
+                </form>
 
             </div>
 
