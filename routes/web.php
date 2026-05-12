@@ -60,6 +60,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/{kode}', [DataController::class, 'show'])->name('show');
     });
 
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::put('/{user}/password', [UserController::class, 'updatePassword'])->name('password');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('pengisian')->name('pengisian.')->group(function () {
+        Route::get('/', [PengisianController::class, 'index'])->name('index');
+        Route::get('/{kode}', [PengisianController::class, 'show'])->name('show');
+    });
+
     // Admin
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');

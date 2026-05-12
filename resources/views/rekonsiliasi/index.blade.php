@@ -1,204 +1,178 @@
 @extends('layouts.app')
 
-@section('title', 'Rekonsiliasi Indikator')
-@section('page-title', 'Rekonsiliasi Indikator')
+@section('title', 'Rekonsiliasi')
+@section('page-title', 'Rekonsiliasi')
 
 @section('content')
 
     {{-- HEADER --}}
-    <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+    <div class="mb-6">
+        <h2 class="text-xl font-bold text-slate-800">Rekonsiliasi PDRB</h2>
+        <p class="text-slate-400 text-sm mt-1">Pantau keseimbangan angka kabupaten/kota terhadap angka provinsi.</p>
+    </div>
 
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+    {{-- FILTER --}}
+    <div class="bg-white rounded-2xl shadow-sm p-5 mb-5">
+        <form method="GET" action="{{ route('rekonsiliasi.index') }}" class="flex flex-wrap items-end gap-3">
 
             <div>
-                <h2 class="text-xl font-bold text-slate-800">
-                    Tingkat Pengangguran Terbuka (TPT)
-                </h2>
-                <p class="text-slate-400 text-sm mt-1">
-                    Simulasi rekonsiliasi nilai kabupaten/kota terhadap target provinsi
-                </p>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Tahun</label>
+                <select name="tahun"
+                    class="border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @foreach($tahunList as $t)
+                        <option value="{{ $t }}" {{ $selectedTahun == $t ? 'selected' : '' }}>{{ $t }}</option>
+                    @endforeach
+                </select>
             </div>
 
-            <div class="grid grid-cols-3 gap-4">
-
-                <div class="bg-slate-50 rounded-xl p-4 min-w-[140px]">
-                    <div class="text-xs text-slate-400 mb-1">Target Provinsi</div>
-                    <div class="text-2xl font-bold text-slate-800">5.4000</div>
-                </div>
-
-                <div class="bg-slate-50 rounded-xl p-4 min-w-[140px]">
-                    <div class="text-xs text-slate-400 mb-1">Hasil Simulasi</div>
-                    <div id="hasilProvinsi" class="text-2xl font-bold text-red-600">5.2100</div>
-                </div>
-
-                <div id="statusBox" class="rounded-xl p-4 min-w-[140px] bg-red-50">
-                    <div class="text-xs text-red-400 mb-1">Status</div>
-                    <div id="statusText" class="text-lg font-bold text-red-700">Belum Seimbang</div>
-                </div>
-
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Triwulan</label>
+                <select name="triwulan"
+                    class="border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @foreach($triwulanList as $q)
+                        <option value="{{ $q }}" {{ $selectedTriwulan == $q ? 'selected' : '' }}>{{ $q }}</option>
+                    @endforeach
+                </select>
             </div>
 
-        </div>
-
-    </div>
-
-    {{-- INFO BAR --}}
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-
-        <div class="text-xs text-slate-400">
-            Terakhir diperbarui:
-            <span class="font-semibold text-slate-600">14 Mei 2026 14:25:03</span>
-        </div>
-
-        <div class="flex items-center gap-3">
-            <div class="text-xs text-slate-400">
-                Refresh otomatis dalam:
-                <span id="countdown" class="font-bold text-slate-600">05:00</span>
-            </div>
-            <button class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-sm transition">
-                Refresh Data
+            <button type="submit"
+                class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-xl text-sm font-medium transition">
+                Tampilkan
             </button>
-        </div>
 
+        </form>
     </div>
 
-    {{-- TABLE --}}
-    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full table-fixed">
+    {{-- SUMMARY CARDS --}}
+    @php
+        $totalIndikator = count($indikator);
+        $jmlSeimbang = collect($status)->filter(fn($s) => $s['seimbang'])->count();
+        $jmlKosong = collect($status)->filter(fn($s) => $s['ada_kosong'])->count();
+        $jmlTidak = $totalIndikator - $jmlSeimbang - $jmlKosong;
+    @endphp
 
+    <div class="grid grid-cols-3 gap-4 mb-5">
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <div class="text-xs text-slate-400 mb-1">Sudah Seimbang</div>
+            <div class="text-2xl font-bold text-green-600">{{ $jmlSeimbang }}</div>
+            <div class="text-xs text-slate-400 mt-1">dari {{ $totalIndikator }} indikator</div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <div class="text-xs text-slate-400 mb-1">Data Tidak Lengkap</div>
+            <div class="text-2xl font-bold text-yellow-500">{{ $jmlKosong }}</div>
+            <div class="text-xs text-slate-400 mt-1">ada kabko belum mengisi</div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <div class="text-xs text-slate-400 mb-1">Tidak Seimbang</div>
+            <div class="text-2xl font-bold text-red-500">{{ $jmlTidak }}</div>
+            <div class="text-xs text-slate-400 mt-1">perlu rekonsiliasi</div>
+        </div>
+    </div>
+
+    {{-- TABEL --}}
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-4 text-xs text-slate-400">
+            <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 bg-green-100 border border-green-300 rounded-sm"></span>
+                Seimbang
+            </span>
+            <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 bg-yellow-100 border border-yellow-300 rounded-sm"></span>
+                Data belum lengkap
+            </span>
+            <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 bg-red-100 border border-red-300 rounded-sm"></span>
+                Tidak seimbang
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
                 <thead class="bg-slate-50 border-b border-slate-100">
                     <tr>
                         <th
-                            class="w-[30%] text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Kabupaten/Kota
+                            class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-[30%]">
+                            Indikator
                         </th>
-                        <th
-                            class="w-[15%] text-center px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Nilai Saat Ini
+                        <th class="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            Angka Provinsi
                         </th>
-                        <th
-                            class="w-[20%] text-center px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Simulasi Baru
+                        <th class="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            Sum Kabko
                         </th>
-                        <th
-                            class="w-[15%] text-center px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        <th class="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                             Selisih
                         </th>
-                        <th
-                            class="w-[20%] text-center px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Aksi
+                        <th class="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            Status
                         </th>
                     </tr>
                 </thead>
-
                 <tbody>
+                    @foreach($indikator as $i => $ind)
+                        @php
+                            $s = $status[$ind['kode']];
+                            $bg = $s['ada_kosong'] ? 'bg-yellow-50' : ($s['seimbang'] ? 'bg-green-50' : 'bg-red-50');
+                        @endphp
+                        <tr class="border-b border-slate-50 {{ $bg }}">
 
-                    @foreach($kabkos as $kabko)
-                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
-
-                            <td class="px-6 py-4 font-medium text-slate-700 text-sm">
-                                {{ $kabko['nama'] }}
+                            <td class="px-6 py-3 text-sm font-medium text-slate-700">
+                                <span class="text-slate-400 mr-2">{{ str_pad($i + 1, 2, '0', STR_PAD_LEFT) }}.</span>
+                                {{ $ind['nama'] }}
                             </td>
 
-                            <td class="px-6 py-4 text-center text-sm font-medium text-slate-600">
-                                {{ number_format($kabko['nilai'], 4) }}
+                            <td class="px-4 py-3 text-sm text-right font-medium text-slate-700">
+                                {{ number_format($s['nilai_provinsi'], 0, ',', '.') }}
                             </td>
 
-                            <td class="px-6 py-4 text-center">
-                                <input type="number" step="0.0001" value="{{ $kabko['nilai'] }}"
-                                    data-current="{{ $kabko['nilai'] }}"
-                                    class="nilaiInput w-32 border border-slate-200 rounded-xl px-3 py-2 text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <td class="px-4 py-3 text-sm text-right font-medium text-slate-700">
+                                @if($s['ada_kosong'])
+                                    <span class="text-yellow-500 text-xs">Belum lengkap</span>
+                                @else
+                                    {{ number_format($s['sum_kabko'], 0, ',', '.') }}
+                                @endif
                             </td>
 
-                            <td class="selisihCell px-6 py-4 text-center text-slate-400 text-sm font-medium">
-                                +0.0000
+                            <td class="px-4 py-3 text-sm text-right font-medium">
+                                @if($s['ada_kosong'])
+                                    <span class="text-slate-300">—</span>
+                                @else
+                                    <span
+                                        class="{{ abs($s['selisih']) <= ($s['nilai_provinsi'] * 0.001) ? 'text-slate-500' : 'text-red-500' }}">
+                                        {{ $s['selisih'] >= 0 ? '+' : '' }}{{ number_format($s['selisih'], 0, ',', '.') }}
+                                    </span>
+                                @endif
                             </td>
 
-                            <td class="px-6 py-4 text-center">
-                                <button
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm transition">
-                                    Simpan
-                                </button>
+                            <td class="px-4 py-3 text-center">
+                                @if($s['ada_kosong'])
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                                        <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
+                                        Data Kosong
+                                    </span>
+                                @elseif($s['seimbang'])
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                        Seimbang
+                                    </span>
+                                @else
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-red-100 text-red-600 text-xs font-medium px-2.5 py-1 rounded-full">
+                                        <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                                        Tidak Seimbang
+                                    </span>
+                                @endif
                             </td>
 
                         </tr>
                     @endforeach
-
                 </tbody>
-
             </table>
         </div>
+
     </div>
 
 @endsection
-
-@push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-
-            const targetProvinsi = 5.4000;
-            const inputs = document.querySelectorAll('.nilaiInput');
-
-            inputs.forEach(input => {
-                input.addEventListener('input', hitungProvinsi);
-            });
-
-            function hitungProvinsi() {
-
-                let total = 0;
-
-                inputs.forEach(input => {
-
-                    const newValue = parseFloat(input.value) || 0;
-                    const currentValue = parseFloat(input.dataset.current);
-                    const diff = newValue - currentValue;
-
-                    total += newValue;
-
-                    const diffCell = input.closest('tr').querySelector('.selisihCell');
-                    diffCell.innerText = (diff >= 0 ? '+' : '') + diff.toFixed(4);
-
-                    if (diff === 0) {
-                        diffCell.className = 'selisihCell px-6 py-4 text-center text-slate-400 text-sm font-medium';
-                    } else if (diff > 0) {
-                        diffCell.className = 'selisihCell px-6 py-4 text-center text-green-600 text-sm font-semibold';
-                    } else {
-                        diffCell.className = 'selisihCell px-6 py-4 text-center text-red-500 text-sm font-semibold';
-                    }
-                });
-
-                const rata = total / inputs.length;
-                const hasilProvinsi = document.getElementById('hasilProvinsi');
-                const statusBox = document.getElementById('statusBox');
-                const statusText = document.getElementById('statusText');
-                const selisih = Math.abs(rata - targetProvinsi);
-
-                hasilProvinsi.innerText = rata.toFixed(4);
-
-                if (selisih <= 0.0001) {
-                    statusBox.className = 'rounded-xl p-4 min-w-[140px] bg-green-50';
-                    statusText.className = 'text-lg font-bold text-green-700';
-                    hasilProvinsi.className = 'text-2xl font-bold text-green-600';
-                    statusText.innerText = 'Sudah Seimbang';
-                } else {
-                    statusBox.className = 'rounded-xl p-4 min-w-[140px] bg-red-50';
-                    statusText.className = 'text-lg font-bold text-red-700';
-                    hasilProvinsi.className = 'text-2xl font-bold text-red-600';
-                    statusText.innerText = 'Belum Seimbang';
-                }
-            }
-
-            // countdown
-            let totalSeconds = 300;
-            setInterval(() => {
-                totalSeconds--;
-                if (totalSeconds <= 0) totalSeconds = 300;
-                const m = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-                const s = String(totalSeconds % 60).padStart(2, '0');
-                document.getElementById('countdown').innerText = `${m}:${s}`;
-            }, 1000);
-
-        });
-    </script>
-@endpush

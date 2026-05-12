@@ -1,20 +1,20 @@
 @extends('layouts.app')
 
-@section('title', 'Data')
-@section('page-title', 'Data')
+@section('title', 'Pengisian Data')
+@section('page-title', 'Pengisian Data')
 
 @section('content')
 
     <div class="mb-6">
-        <h2 class="text-xl font-bold text-slate-800">Data Indikator</h2>
-        <p class="text-slate-400 text-sm mt-1">Pilih indikator untuk melihat data detail per kabupaten/kota.</p>
+        <h2 class="text-xl font-bold text-slate-800">Pengisian Data</h2>
+        <p class="text-slate-400 text-sm mt-1">Pilih indikator untuk mengisi data kabupaten/kota.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
         @foreach($indikator as $i => $item)
 
-            <a href="{{ route('data.show', $item['kode']) }}"
+            <a href="{{ route('pengisian.show', $item['kode']) }}"
                 class="bg-white rounded-2xl shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all group">
 
                 <div class="flex items-start gap-4">
@@ -28,11 +28,10 @@
                         <div class="text-sm font-semibold text-slate-700 group-hover:text-blue-600 transition leading-snug">
                             {{ $item['nama'] }}
                         </div>
-                        <div class="mt-1.5">
+                        <div class="text-xs text-slate-400 mt-1.5">
                             <span
-                                class="inline-flex items-center gap-1 bg-green-50 text-green-600 px-2 py-0.5 rounded-full text-xs font-medium">
-                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                                Data tersedia
+                                class="inline-flex items-center gap-1 bg-slate-50 text-slate-400 px-2 py-0.5 rounded-full text-xs">
+                                Klik untuk mengisi data
                             </span>
                         </div>
                     </div>

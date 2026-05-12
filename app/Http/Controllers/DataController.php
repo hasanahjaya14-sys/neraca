@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class DataController extends Controller
 {
@@ -25,10 +24,9 @@ class DataController extends Controller
         ['kode' => 'pendidikan', 'nama' => 'Jasa Pendidikan'],
         ['kode' => 'kesehatan', 'nama' => 'Jasa Kesehatan'],
         ['kode' => 'lainnya', 'nama' => 'Jasa Lainnya'],
-        ['kode' => 'penduduk_miskin', 'nama' => 'Jumlah Penduduk Miskin'],
     ];
 
-    private $strukturPemerintahan = [
+    private $struktur = [
         'Belanja Pegawai' => [
             'APBD',
             'APBN',
@@ -86,14 +84,16 @@ class DataController extends Controller
         'Palangka Raya',
     ];
 
-    private function generateDummyPemerintahan()
+    private function generateDummy()
     {
         $data = [];
-        foreach ($this->strukturPemerintahan as $parent => $children) {
+        foreach ($this->struktur as $parent => $children) {
             foreach ($children as $child) {
-                foreach (range(2018, 2025) as $tahun) {
+                foreach (range(2018, 2026) as $tahun) {
                     foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $q) {
-                        $data[$parent][$child][$tahun][$q] = rand(100000000, 9999999999);
+                        foreach ($this->kabkoList as $kabko) {
+                            $data[$parent][$child][$tahun][$q][$kabko] = rand(100000000, 9999999999);
+                        }
                     }
                 }
             }
@@ -109,51 +109,24 @@ class DataController extends Controller
     public function show(Request $request, $kode)
     {
         $indikator = collect($this->indikator)->firstWhere('kode', $kode);
-
         if (!$indikator)
             abort(404);
 
-        $data = collect();
-        $kabkoList = collect();
-        $tahunList = collect();
-        $struktur = [];
-        $dummyData = [];
-        $selectedKabko = '';
-        $selectedTahun = '';
+        $selectedKabko = $request->get('kabko', $this->kabkoList[0]);
+        $selectedTahun = $request->get('tahun', 2025);
 
-        if ($kode === 'penduduk_miskin') {
-            $selectedKabko = $request->get('kabko', '');
-            $selectedTahun = $request->get('tahun', '');
-
-            $query = DB::table('data_dummy')->orderBy('kabko')->orderBy('tahun');
-            if ($selectedKabko)
-                $query->where('kabko', $selectedKabko);
-            if ($selectedTahun)
-                $query->where('tahun', $selectedTahun);
-
-            $data = $query->get();
-            $kabkoList = DB::table('data_dummy')->distinct()->orderBy('kabko')->pluck('kabko');
-            $tahunList = DB::table('data_dummy')->distinct()->orderBy('tahun')->pluck('tahun');
-
-        } elseif ($kode === 'pemerintahan') {
-            $struktur = $this->strukturPemerintahan;
-            $dummyData = $this->generateDummyPemerintahan();
-            $kabkoList = collect($this->kabkoList);
-            $tahunList = collect(range(2018, 2025));
-            $selectedKabko = $request->get('kabko', $this->kabkoList[0]);
-            $selectedTahun = $request->get('tahun', 2025);
-        }
+        $dummyData = $this->generateDummy();
 
         return view('data.show', compact(
             'indikator',
-            'data',
-            'kabkoList',
-            'tahunList',
-            'struktur',
-            'dummyData',
             'kode',
+            'dummyData',
             'selectedKabko',
             'selectedTahun'
-        ));
+        ) + [
+            'struktur' => $this->struktur,
+            'kabkoList' => $this->kabkoList,
+            'tahunList' => range(2018, 2026),
+        ]);
     }
 }
