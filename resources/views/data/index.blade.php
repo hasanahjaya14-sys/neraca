@@ -5,106 +5,57 @@
 
 @section('content')
 
-    {{-- HEADER & FILTER --}}
-    <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
-
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-
-            <div>
-                <h2 class="text-xl font-bold text-slate-800">Data Mentah</h2>
-                <p class="text-slate-400 text-sm mt-1">Jumlah Penduduk Miskin per Kabupaten/Kota</p>
-            </div>
-
-            <form method="GET" action="{{ route('data.index') }}" class="flex flex-wrap items-end gap-3">
-
-                <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Kabupaten/Kota</label>
-                    <select name="kabko"
-                        class="border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Semua Kabko</option>
-                        @foreach($kabkoList as $k)
-                            <option value="{{ $k }}" {{ $k == $kabko ? 'selected' : '' }}>{{ $k }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Tahun</label>
-                    <select name="tahun"
-                        class="border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Semua Tahun</option>
-                        @foreach($tahunList as $t)
-                            <option value="{{ $t }}" {{ $t == $tahun ? 'selected' : '' }}>{{ $t }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <button type="submit"
-                    class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-xl text-sm font-medium transition">
-                    Filter
-                </button>
-
-                @if($kabko || $tahun)
-                    <a href="{{ route('data.index') }}"
-                        class="border border-slate-200 hover:bg-slate-50 text-slate-600 px-5 py-2 rounded-xl text-sm font-medium transition">
-                        Reset
-                    </a>
-                @endif
-
-            </form>
-
-        </div>
-
+    <div class="mb-6">
+        <h2 class="text-xl font-bold text-slate-800">Data Indikator</h2>
+        <p class="text-slate-400 text-sm mt-1">Pilih indikator untuk melihat data detail per kabupaten/kota.</p>
     </div>
 
-    {{-- TABLE --}}
-    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
-        <div class="px-6 py-4 border-b border-slate-100">
-            <span class="text-sm text-slate-500">
-                Menampilkan <span class="font-semibold text-slate-700">{{ $data->count() }}</span> data
-            </span>
-        </div>
+        @foreach($indikator as $i => $item)
 
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">No</th>
-                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Kabupaten/Kota</th>
-                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Variabel</th>
-                        <th class="text-center px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tahun
-                        </th>
-                        <th class="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Nilai
-                        </th>
-                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Satuan
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($data as $i => $row)
-                        <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                            <td class="px-6 py-3 text-sm text-slate-400">{{ $i + 1 }}</td>
-                            <td class="px-6 py-3 text-sm font-medium text-slate-700">{{ $row->kabko }}</td>
-                            <td class="px-6 py-3 text-sm text-slate-500">{{ str_replace('_', ' ', $row->variabel) }}</td>
-                            <td class="px-6 py-3 text-sm text-slate-600 text-center">{{ $row->tahun }}</td>
-                            <td class="px-6 py-3 text-sm text-slate-700 text-right font-medium">
-                                {{ number_format($row->nilai, 0, ',', '.') }}
-                            </td>
-                            <td class="px-6 py-3 text-sm text-slate-400">{{ $row->satuan }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-slate-400 text-sm">
-                                Tidak ada data ditemukan.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+            <a href="{{ route('data.show', $item['kode']) }}"
+                class="bg-white rounded-2xl shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all group">
+
+                <div class="flex items-start gap-4">
+
+                    <div
+                        class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold
+                        {{ $item['kode'] === 'penduduk_miskin' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500' }}">
+                        {{ $i + 1 <= 17 ? str_pad($i + 1, 2, '0', STR_PAD_LEFT) : '★' }}
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-semibold text-slate-700 group-hover:text-blue-600 transition leading-snug">
+                            {{ $item['nama'] }}
+                        </div>
+                        <div class="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
+                            @if($item['kode'] === 'penduduk_miskin')
+                                <span
+                                    class="inline-flex items-center gap-1 bg-green-50 text-green-600 px-2 py-0.5 rounded-full text-xs font-medium">
+                                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                    Data tersedia
+                                </span>
+                            @else
+                                <span
+                                    class="inline-flex items-center gap-1 bg-slate-50 text-slate-400 px-2 py-0.5 rounded-full text-xs">
+                                    <span class="w-1.5 h-1.5 bg-slate-300 rounded-full"></span>
+                                    Belum ada data
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <svg class="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition flex-shrink-0 mt-0.5" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+
+                </div>
+
+            </a>
+
+        @endforeach
 
     </div>
 

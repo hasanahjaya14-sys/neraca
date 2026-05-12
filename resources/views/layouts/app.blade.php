@@ -544,10 +544,10 @@
                     <span class="notif-dot"></span>
                 </div>
 
-                {{-- User --}}
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="user-pill">
+                {{-- User Dropdown --}}
+                <div class="relative" id="userMenu">
+
+                    <button onclick="toggleUserMenu()" class="user-pill" type="button">
                         <div class="user-avatar">
                             {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
                         </div>
@@ -560,7 +560,48 @@
                             </div>
                         </div>
                     </button>
-                </form>
+
+                    <div id="userDropdown"
+                        class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50">
+
+                        <a href="{{ route('profile') }}"
+                            class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Profil
+                        </a>
+
+                        <button type="button" onclick="toggleVersionModal()"
+                            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Status Versi
+                        </button>
+
+                        <div class="border-t border-slate-100 my-1"></div>
+
+                        <form method="POST" action="{{ route('logout') }}" id="logoutForm">
+                            @csrf
+                            <button type="button" onclick="toggleLogoutModal()"
+                                class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Logout
+                            </button>
+                        </form>
+
+                    </div>
+
+                </div>
 
             </div>
 
@@ -571,6 +612,58 @@
             @yield('content')
         </main>
 
+    </div>
+
+    {{-- Version Modal --}}
+    <div id="versionModal" class="hidden fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+        onclick="toggleVersionModal()">
+        <div class="bg-white rounded-2xl shadow-lg p-6 w-72" onclick="event.stopPropagation()">
+            <h3 class="text-base font-bold text-slate-800 mb-4">Status Versi</h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Versi</span>
+                    <span class="font-semibold text-slate-700">Beta Test</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Aplikasi</span>
+                    <span class="font-semibold text-slate-700">Rekonsiliasi PDRB</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Instansi</span>
+                    <span class="font-semibold text-slate-700">BPS Kalteng</span>
+                </div>
+            </div>
+            <button onclick="toggleVersionModal()"
+                class="mt-5 w-full bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-xl text-sm transition">
+                Tutup
+            </button>
+        </div>
+    </div>
+
+    {{-- Logout Modal --}}
+    <div id="logoutModal" class="hidden fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+        onclick="toggleLogoutModal()">
+        <div class="bg-white rounded-2xl shadow-lg p-6 w-80" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-center w-12 h-12 bg-red-50 rounded-full mx-auto mb-4">
+                <svg class="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 text-center mb-1">Keluar dari Aplikasi</h3>
+            <p class="text-sm text-slate-400 text-center mb-6">Yakin ingin keluar? Sesi kamu akan diakhiri.</p>
+            <div class="flex gap-3">
+                <button onclick="toggleLogoutModal()"
+                    class="flex-1 border border-slate-200 hover:bg-slate-50 text-slate-600 py-2.5 rounded-xl text-sm font-medium transition">
+                    Batal
+                </button>
+                <button onclick="document.getElementById('logoutForm').submit()"
+                    class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl text-sm font-medium transition">
+                    Keluar
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -591,6 +684,29 @@
             main.classList.toggle('expanded', isCollapsed);
             localStorage.setItem(STORAGE_KEY, isCollapsed);
         });
+
+        // user dropdown
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', function (e) {
+            const menu = document.getElementById('userMenu');
+            if (!menu.contains(e.target)) {
+                document.getElementById('userDropdown').classList.add('hidden');
+            }
+        });
+
+        function toggleVersionModal() {
+            document.getElementById('versionModal').classList.toggle('hidden');
+            document.getElementById('userDropdown').classList.add('hidden');
+        }
+
+        function toggleLogoutModal() {
+            document.getElementById('logoutModal').classList.toggle('hidden');
+            document.getElementById('userDropdown').classList.add('hidden');
+        }
     </script>
 
     @stack('scripts')
