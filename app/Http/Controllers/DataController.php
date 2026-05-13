@@ -2,131 +2,49 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kategori;
+use App\Models\Region;
+use App\Models\VariableValue;
 use Illuminate\Http\Request;
 
 class DataController extends Controller
 {
-    private $indikator = [
-        ['kode' => 'pertanian', 'nama' => 'Pertanian, Kehutanan, dan Perikanan'],
-        ['kode' => 'pertambangan', 'nama' => 'Pertambangan dan Penggalian'],
-        ['kode' => 'industri', 'nama' => 'Industri Pengolahan'],
-        ['kode' => 'listrik', 'nama' => 'Pengadaan Listrik dan Gas'],
-        ['kode' => 'air', 'nama' => 'Pengadaan Air dan Pengelolaan Sampah'],
-        ['kode' => 'konstruksi', 'nama' => 'Konstruksi'],
-        ['kode' => 'perdagangan', 'nama' => 'Perdagangan Besar dan Eceran'],
-        ['kode' => 'transportasi', 'nama' => 'Transportasi dan Pergudangan'],
-        ['kode' => 'akomodasi', 'nama' => 'Penyediaan Akomodasi dan Makan Minum'],
-        ['kode' => 'informasi', 'nama' => 'Informasi dan Komunikasi'],
-        ['kode' => 'keuangan', 'nama' => 'Jasa Keuangan'],
-        ['kode' => 'realestate', 'nama' => 'Real Estate'],
-        ['kode' => 'perusahaan', 'nama' => 'Jasa Perusahaan'],
-        ['kode' => 'pemerintahan', 'nama' => 'Administrasi Pemerintahan'],
-        ['kode' => 'pendidikan', 'nama' => 'Jasa Pendidikan'],
-        ['kode' => 'kesehatan', 'nama' => 'Jasa Kesehatan'],
-        ['kode' => 'lainnya', 'nama' => 'Jasa Lainnya'],
-    ];
-
-    private $struktur = [
-        'Belanja Pegawai' => [
-            'APBD',
-            'APBN',
-            'APBdes',
-            'Belanja Pegawai Berlaku',
-            'Indeks Upah',
-            'Belanja Pegawai Konstan',
-        ],
-        'Belanja Modal' => [
-            'APBD',
-            'APBN',
-            'APBdes',
-            'Belanja Modal Berlaku',
-            'Implisit PMTB',
-            'Belanja Modal Konstan',
-        ],
-        'Penyusutan' => [
-            'Penyusutan Berlaku',
-            'Penyusutan Konstan',
-        ],
-        'NTB ADHB' => [
-            'NTB ADHB',
-            'NTB ADHK',
-            'Q to Q',
-            'Y on Y',
-            'C to C',
-            'Implisit',
-            'Laju Implisit',
-        ],
-        'Rilis (juta rp)' => [
-            'NTB ADHB',
-            'NTB ADHK',
-            'Q to Q',
-            'Y on Y',
-            'C to C',
-            'Implisit',
-            'Laju Implisit',
-        ],
-    ];
-
-    private $kabkoList = [
-        'Kotawaringin Barat',
-        'Kotawaringin Timur',
-        'Kapuas',
-        'Barito Selatan',
-        'Barito Utara',
-        'Katingan',
-        'Seruyan',
-        'Sukamara',
-        'Lamandau',
-        'Gunung Mas',
-        'Pulang Pisau',
-        'Murung Raya',
-        'Barito Timur',
-        'Palangka Raya',
-    ];
-
-    private function generateDummy()
-    {
-        $data = [];
-        foreach ($this->struktur as $parent => $children) {
-            foreach ($children as $child) {
-                foreach (range(2018, 2026) as $tahun) {
-                    foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $q) {
-                        foreach ($this->kabkoList as $kabko) {
-                            $data[$parent][$child][$tahun][$q][$kabko] = rand(100000000, 9999999999);
-                        }
-                    }
-                }
-            }
-        }
-        return $data;
-    }
-
     public function index()
     {
-        return view('data.index', ['indikator' => $this->indikator]);
+        $kategoris = Kategori::orderBy('urutan')->get();
+        return view('data.index', compact('kategoris'));
     }
 
-    public function show(Request $request, $kode)
+    public function show(Request $request, $id)
     {
-        $indikator = collect($this->indikator)->firstWhere('kode', $kode);
-        if (!$indikator)
-            abort(404);
+        $kategori = Kategori::with([
+            'subKategoris.children'
+        ])->findOrFail($id);
 
-        $selectedKabko = $request->get('kabko', $this->kabkoList[0]);
-        $selectedTahun = $request->get('tahun', 2025);
+        $regions = Region::where('tipe', '!=', 'provinsi')->orderBy('kode_bps')->get();
+        $tahun = $request->input('tahun', 2025);
+        $triwulan = $request->input('triwulan', 1);
 
-        $dummyData = $this->generateDummy();
+        // Ambil semua leaf sub_kategori_id dalam kategori ini
+        $leafIds = collect();
+        foreach ($kategori->subKategoris as $sub) {
+            if ($sub->children->isNotEmpty()) {
+                foreach ($sub->children as $child) {
+                    $leafIds->push($child->id);
+                }
+            } else {
+                $leafIds->push($sub->id);
+            }
+        }
 
-        return view('data.show', compact(
-            'indikator',
-            'kode',
-            'dummyData',
-            'selectedKabko',
-            'selectedTahun'
-        ) + [
-            'struktur' => $this->struktur,
-            'kabkoList' => $this->kabkoList,
-            'tahunList' => range(2018, 2026),
-        ]);
+        // Ambil values: [sub_kategori_id][region_id] => value
+        $values = VariableValue::whereIn('sub_kategori_id', $leafIds)
+            ->where('tahun', $tahun)
+            ->where('triwulan', $triwulan)
+            ->get()
+            ->groupBy('sub_kategori_id')
+            ->map(fn($group) => $group->keyBy('region_id'));
+
+        return view('data.show', compact('kategori', 'regions', 'tahun', 'triwulan', 'values'));
     }
 }

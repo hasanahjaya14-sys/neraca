@@ -10,53 +10,66 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = [];
+        // Ambil semua region
+        $provinsi = DB::table('regions')->where('tipe', 'provinsi')->first();
+        $kabkos = DB::table('regions')->where('tipe', '!=', 'provinsi')->get()->keyBy('kode_bps');
 
-        // Akun Provinsi
-        for ($i = 1; $i <= 5; $i++) {
-            $users[] = [
-                'name' => "Provinsi Kalimantan Tengah $i",
-                'username' => "kalteng$i",
-                'email' => "kalteng$i@bps.go.id",
-                'password' => Hash::make('password'),
-                'role' => 'provinsi',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
+        // Hapus data lama
+        DB::table('users')->truncate();
 
-        // Kabupaten/Kota di Kalimantan Tengah
-        $kabkos = [
-            'Kotawaringin Barat' => 'kobar',
-            'Kotawaringin Timur' => 'kotim',
-            'Kapuas' => 'kapuas',
-            'Barito Selatan' => 'barsel',
-            'Barito Utara' => 'barut',
-            'Katingan' => 'katingan',
-            'Seruyan' => 'seruyan',
-            'Sukamara' => 'sukamara',
-            'Lamandau' => 'lamandau',
-            'Gunung Mas' => 'gumas',
-            'Pulang Pisau' => 'pulpis',
-            'Murung Raya' => 'mura',
-            'Barito Timur' => 'bartim',
-            'Palangka Raya' => 'palangkaraya',
+        // 1. Superadmin
+        DB::table('users')->insert([
+            'name' => 'Super Admin',
+            'username' => 'superadmin',
+            'email' => 'superadmin@bps.go.id',
+            'password' => Hash::make('password'),
+            'role' => 'superadmin',
+            'region_id' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // 2. Akun Provinsi
+        DB::table('users')->insert([
+            'name' => 'Admin Provinsi',
+            'username' => 'provinsi',
+            'email' => 'provinsi@bps.go.id',
+            'password' => Hash::make('password'),
+            'role' => 'provinsi',
+            'region_id' => $provinsi->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // 3. Akun Kabko (14 kabupaten/kota)
+        $kabkoList = [
+            ['kode' => '6201', 'name' => 'Admin Kotawaringin Barat', 'username' => 'kobar'],
+            ['kode' => '6202', 'name' => 'Admin Kotawaringin Timur', 'username' => 'kotim'],
+            ['kode' => '6203', 'name' => 'Admin Kapuas', 'username' => 'kapuas'],
+            ['kode' => '6204', 'name' => 'Admin Barito Selatan', 'username' => 'barsel'],
+            ['kode' => '6205', 'name' => 'Admin Barito Utara', 'username' => 'barut'],
+            ['kode' => '6206', 'name' => 'Admin Sukamara', 'username' => 'sukamara'],
+            ['kode' => '6207', 'name' => 'Admin Lamandau', 'username' => 'lamandau'],
+            ['kode' => '6208', 'name' => 'Admin Seruyan', 'username' => 'seruyan'],
+            ['kode' => '6209', 'name' => 'Admin Katingan', 'username' => 'katingan'],
+            ['kode' => '6210', 'name' => 'Admin Pulang Pisau', 'username' => 'pulpis'],
+            ['kode' => '6211', 'name' => 'Admin Gunung Mas', 'username' => 'gumas'],
+            ['kode' => '6212', 'name' => 'Admin Barito Timur', 'username' => 'bartim'],
+            ['kode' => '6213', 'name' => 'Admin Murung Raya', 'username' => 'murung'],
+            ['kode' => '6271', 'name' => 'Admin Palangka Raya', 'username' => 'palangkaraya'],
         ];
 
-        foreach ($kabkos as $nama => $kode) {
-            for ($i = 1; $i <= 2; $i++) {
-                $users[] = [
-                    'name' => "$nama $i",
-                    'username' => "$kode$i",
-                    'email' => "$kode$i@bps.go.id",
-                    'password' => Hash::make('password'),
-                    'role' => 'kabko',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
+        foreach ($kabkoList as $item) {
+            DB::table('users')->insert([
+                'name' => $item['name'],
+                'username' => $item['username'],
+                'email' => $item['username'] . '@bps.go.id',
+                'password' => Hash::make('password'),
+                'role' => 'kabko',
+                'region_id' => $kabkos[$item['kode']]->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
-
-        DB::table('users')->insert($users);
     }
 }

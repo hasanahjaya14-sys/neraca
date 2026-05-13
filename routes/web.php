@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     // Pengisian
     Route::prefix('pengisian')->name('pengisian.')->group(function () {
         Route::get('/', [PengisianController::class, 'index'])->name('index');
+        Route::get('/{kode}', [PengisianController::class, 'show'])->name('show');
     });
 
     // Rekonsiliasi
@@ -47,34 +48,24 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [FormulaController::class, 'index'])->name('index');
     });
 
+    // Metadata
     Route::prefix('metadata')->name('metadata.')->group(function () {
         Route::get('/', [MetadataController::class, 'index'])->name('index');
+        Route::get('/{kode}', [MetadataController::class, 'show'])->name('show');
     });
 
-    Route::prefix('data')->name('data.')->group(function () {
-        Route::get('/', [DataController::class, 'index'])->name('index');
-    });
-
+    // Data
     Route::prefix('data')->name('data.')->group(function () {
         Route::get('/', [DataController::class, 'index'])->name('index');
         Route::get('/{kode}', [DataController::class, 'show'])->name('show');
     });
 
+    // Admin - Users
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
         Route::put('/{user}/password', [UserController::class, 'updatePassword'])->name('password');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
-    });
-
-    Route::prefix('pengisian')->name('pengisian.')->group(function () {
-        Route::get('/', [PengisianController::class, 'index'])->name('index');
-        Route::get('/{kode}', [PengisianController::class, 'show'])->name('show');
-    });
-
-    // Admin
-    Route::prefix('users')->name('users.')->group(function () {
-        Route::get('/', [UserController::class, 'index'])->name('index');
     });
 
 });
