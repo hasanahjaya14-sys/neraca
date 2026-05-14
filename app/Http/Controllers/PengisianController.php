@@ -2,146 +2,121 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kategori;
+use App\Models\Region;
+use App\Models\VariableValue;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PengisianController extends Controller
 {
-    private $indikator = [
-        ['kode' => 'pertanian', 'nama' => 'Pertanian, Kehutanan, dan Perikanan'],
-        ['kode' => 'pertambangan', 'nama' => 'Pertambangan dan Penggalian'],
-        ['kode' => 'industri', 'nama' => 'Industri Pengolahan'],
-        ['kode' => 'listrik', 'nama' => 'Pengadaan Listrik dan Gas'],
-        ['kode' => 'air', 'nama' => 'Pengadaan Air dan Pengelolaan Sampah'],
-        ['kode' => 'konstruksi', 'nama' => 'Konstruksi'],
-        ['kode' => 'perdagangan', 'nama' => 'Perdagangan Besar dan Eceran'],
-        ['kode' => 'transportasi', 'nama' => 'Transportasi dan Pergudangan'],
-        ['kode' => 'akomodasi', 'nama' => 'Penyediaan Akomodasi dan Makan Minum'],
-        ['kode' => 'informasi', 'nama' => 'Informasi dan Komunikasi'],
-        ['kode' => 'keuangan', 'nama' => 'Jasa Keuangan'],
-        ['kode' => 'realestate', 'nama' => 'Real Estate'],
-        ['kode' => 'perusahaan', 'nama' => 'Jasa Perusahaan'],
-        ['kode' => 'pemerintahan', 'nama' => 'Administrasi Pemerintahan'],
-        ['kode' => 'pendidikan', 'nama' => 'Jasa Pendidikan'],
-        ['kode' => 'kesehatan', 'nama' => 'Jasa Kesehatan'],
-        ['kode' => 'lainnya', 'nama' => 'Jasa Lainnya'],
-    ];
-
-    private $strukturPemerintahan = [
-        'Belanja Pegawai' => [
-            'APBD',
-            'APBN',
-            'APBdes',
-            'Belanja Pegawai Berlaku',
-            'Indeks Upah',
-            'Belanja Pegawai Konstan',
-        ],
-        'Belanja Modal' => [
-            'APBD',
-            'APBN',
-            'APBdes',
-            'Belanja Modal Berlaku',
-            'Implisit PMTB',
-            'Belanja Modal Konstan',
-        ],
-        'Penyusutan' => [
-            'Penyusutan Berlaku',
-            'Penyusutan Konstan',
-        ],
-        'NTB ADHB' => [
-            'NTB ADHB',
-            'NTB ADHK',
-            'Q to Q',
-            'Y on Y',
-            'C to C',
-            'Implisit',
-            'Laju Implisit',
-        ],
-        'Rilis (juta rp)' => [
-            'NTB ADHB',
-            'NTB ADHK',
-            'Q to Q',
-            'Y on Y',
-            'C to C',
-            'Implisit',
-            'Laju Implisit',
-        ],
-    ];
-
-    private function getCurrentTriwulan()
-    {
-        $month = (int) date('n');
-        if ($month <= 3)
-            return ['tahun' => (int) date('Y'), 'q' => 1];
-        if ($month <= 6)
-            return ['tahun' => (int) date('Y'), 'q' => 2];
-        if ($month <= 9)
-            return ['tahun' => (int) date('Y'), 'q' => 3];
-        return ['tahun' => (int) date('Y'), 'q' => 4];
-    }
-
-    private function isLocked($tahun, $q)
-    {
-        $current = $this->getCurrentTriwulan();
-        $qNum = (int) str_replace('Q', '', $q);
-
-        if ($tahun < $current['tahun'])
-            return true;
-        if ($tahun == $current['tahun'] && $qNum < $current['q'])
-            return true;
-        return false;
-    }
-
-    private function generateDummy($struktur)
-    {
-        $data = [];
-        foreach ($struktur as $parent => $children) {
-            foreach ($children as $child) {
-                foreach (range(2018, 2026) as $tahun) {
-                    foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $q) {
-                        $data[$parent][$child][$tahun][$q] = rand(0, 3) > 0
-                            ? rand(100000000, 9999999999)
-                            : null;
-                    }
-                }
-            }
-        }
-        return $data;
-    }
-
     public function index()
     {
-        return view('pengisian.index', ['indikator' => $this->indikator]);
+        $kategoris = Kategori::orderBy('urutan')->get();
+        return view('pengisian.index', compact('kategoris'));
     }
 
-    public function show(Request $request, $kode)
+    public function show(Request $request, $id)
     {
-        $indikator = collect($this->indikator)->firstWhere('kode', $kode);
-        if (!$indikator)
-            abort(404);
+        $user = Auth::user();
+        $role = $user->role;
 
-        // Untuk sekarang semua indikator pakai struktur pemerintahan sebagai dummy
-        $struktur = $this->strukturPemerintahan;
-        $dummyData = $this->generateDummy($struktur);
-
-        $tahunList = range(2018, 2026);
-        $selectedTahun = $request->get('tahun', (int) date('Y'));
-        $current = $this->getCurrentTriwulan();
-
-        // Tentukan status lock per triwulan
-        $lockStatus = [];
-        foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $q) {
-            $lockStatus[$q] = $this->isLocked($selectedTahun, $q);
+        // Tentukan region_id yang akan ditampilkan
+        if ($role === 'kabko') {
+            $regionId = $user->region_id;
+            $canEdit = true;
+        } else {
+            $regionId = $request->input('region_id', 2);
+            $canEdit = false;
         }
 
+        $kategori = Kategori::with(['subKategoris.children'])->findOrFail($id);
+        $regions = Region::where('tipe', '!=', 'provinsi')->orderBy('kode_bps')->get();
+
+        // Triwulan aktif = 1 triwulan sebelum sekarang
+        $triwulanSekarang = (int) ceil(now()->month / 3);
+        $tahunSekarang = (int) now()->year;
+
+        if ($triwulanSekarang === 1) {
+            $triwulanAktif = 4;
+            $tahunAktif = $tahunSekarang - 1;
+        } else {
+            $triwulanAktif = $triwulanSekarang - 1;
+            $tahunAktif = $tahunSekarang;
+        }
+
+        $tahun = (int) $request->input('tahun', $tahunAktif);
+        $triwulan = (int) $request->input('triwulan', $triwulanAktif);
+
+        // Kumpulkan leaf ids
+        $leafIds = collect();
+        foreach ($kategori->subKategoris as $sub) {
+            if ($sub->children->isNotEmpty()) {
+                foreach ($sub->children as $child) {
+                    $leafIds->push($child->id);
+                }
+            } else {
+                $leafIds->push($sub->id);
+            }
+        }
+
+        $values = VariableValue::whereIn('sub_kategori_id', $leafIds)
+            ->where('region_id', $regionId)
+            ->where('tahun', $tahun)
+            ->where('triwulan', $triwulan)
+            ->get()
+            ->keyBy('sub_kategori_id');
+
+        // Lewat = sebelum triwulan aktif
+        $isPast = $tahun < $tahunAktif ||
+            ($tahun === $tahunAktif && $triwulan < $triwulanAktif);
+
         return view('pengisian.show', compact(
-            'indikator',
-            'struktur',
-            'dummyData',
-            'tahunList',
-            'selectedTahun',
-            'lockStatus',
-            'current',
-            'kode'
+            'kategori',
+            'tahun',
+            'triwulan',
+            'values',
+            'isPast',
+            'canEdit',
+            'regions',
+            'regionId',
+            'role'
         ));
+    }
+
+    public function store(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'kabko') {
+            return back()->with('error', 'Anda tidak memiliki akses untuk mengubah data.');
+        }
+
+        $regionId = $user->region_id;
+        $tahun = (int) $request->input('tahun');
+        $triwulan = (int) $request->input('triwulan');
+        $values = $request->input('values', []);
+
+        foreach ($values as $subKategoriId => $value) {
+            VariableValue::updateOrCreate(
+                [
+                    'sub_kategori_id' => $subKategoriId,
+                    'region_id' => $regionId,
+                    'tahun' => $tahun,
+                    'triwulan' => $triwulan,
+                ],
+                [
+                    'value' => is_numeric($value) ? (int) $value : null,
+                ]
+            );
+        }
+
+        return redirect()
+            ->route('pengisian.show', [
+                'id' => $id,
+                'tahun' => $tahun,
+                'triwulan' => $triwulan,
+            ])
+            ->with('success', 'Data berhasil disimpan.');
     }
 }

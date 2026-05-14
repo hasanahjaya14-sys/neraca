@@ -1,177 +1,115 @@
 @extends('layouts.app')
 
-@section('title', 'Monitoring Kabko')
-@section('page-title', 'Monitoring Kabko')
+@section('title', 'Monitoring')
 
 @section('content')
+    <div class="p-6">
 
-    {{-- HEADER --}}
-    <div class="mb-6">
-        <h2 class="text-xl font-bold text-slate-800">Monitoring Pengisian Data</h2>
-        <p class="text-slate-400 text-sm mt-1">Pantau status pengisian data kabupaten/kota per indikator dan triwulan.</p>
-    </div>
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">Monitoring Kabupaten/Kota</h1>
 
-    {{-- FILTER --}}
-    <div class="bg-white rounded-2xl shadow-sm p-5 mb-5">
-        <form method="GET" action="{{ route('monitoring.index') }}" class="flex flex-wrap items-end gap-3">
+        {{-- Filter --}}
+        <form method="GET" class="flex flex-wrap gap-3 mb-6">
+            <select name="kategori_id" class="border rounded-lg px-3 py-2 text-sm" onchange="this.form.submit()">
+                @foreach ($kategoris as $k)
+                    <option value="{{ $k->id }}" {{ $kategori->id == $k->id ? 'selected' : '' }}>
+                        {{ $k->urutan }}. {{ $k->name }}
+                    </option>
+                @endforeach
+            </select>
 
-            <div class="flex-1 min-w-[200px]">
-                <label class="block text-xs font-medium text-slate-500 mb-1">Indikator</label>
-                <select name="indikator"
-                    class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @foreach($indikator as $item)
-                        <option value="{{ $item['kode'] }}" {{ $selectedIndikator == $item['kode'] ? 'selected' : '' }}>
-                            {{ $item['nama'] }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            <select name="tahun" class="border rounded-lg px-3 py-2 text-sm" onchange="this.form.submit()">
+                @foreach (range(2018, 2025) as $t)
+                    <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
+                @endforeach
+            </select>
 
-            <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1">Tahun</label>
-                <select name="tahun"
-                    class="border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @foreach($tahunList as $t)
-                        <option value="{{ $t }}" {{ $selectedTahun == $t ? 'selected' : '' }}>{{ $t }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <button type="submit"
-                class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-xl text-sm font-medium transition">
-                Tampilkan
-            </button>
-
+            <select name="triwulan" class="border rounded-lg px-3 py-2 text-sm" onchange="this.form.submit()">
+                @foreach ([1, 2, 3, 4] as $tw)
+                    <option value="{{ $tw }}" {{ $triwulan == $tw ? 'selected' : '' }}>Q{{ $tw }}</option>
+                @endforeach
+            </select>
         </form>
-    </div>
 
-    {{-- SUMMARY --}}
-    @php
-        $totalSel = count($kabkoList) * 4;
-        $terisi = 0;
-        foreach ($data as $kabko => $triwulan) {
-            foreach ($triwulan as $q => $nilai) {
-                if ($nilai !== null)
-                    $terisi++;
-            }
-        }
-        $belumTerisi = $totalSel - $terisi;
-        $pct = $totalSel > 0 ? round(($terisi / $totalSel) * 100) : 0;
-    @endphp
-
-    <div class="grid grid-cols-3 gap-4 mb-5">
-
-        <div class="bg-white rounded-2xl shadow-sm p-5">
-            <div class="text-xs text-slate-400 mb-1">Total Sel</div>
-            <div class="text-2xl font-bold text-slate-800">{{ $totalSel }}</div>
-            <div class="text-xs text-slate-400 mt-1">{{ count($kabkoList) }} kabko × 4 triwulan</div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-sm p-5">
-            <div class="text-xs text-slate-400 mb-1">Sudah Terisi</div>
-            <div class="text-2xl font-bold text-green-600">{{ $terisi }}</div>
-            <div class="text-xs text-green-500 mt-1">{{ $pct }}% selesai</div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-sm p-5">
-            <div class="text-xs text-slate-400 mb-1">Belum Terisi</div>
-            <div class="text-2xl font-bold text-red-500">{{ $belumTerisi }}</div>
-            <div class="text-xs text-red-400 mt-1">{{ 100 - $pct }}% belum selesai</div>
-        </div>
-
-    </div>
-
-    {{-- TABEL --}}
-    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <div>
-                <span class="text-sm font-semibold text-slate-700">{{ $indikatorAktif['nama'] }}</span>
-                <span class="text-sm text-slate-400 ml-2">— {{ $selectedTahun }}</span>
-            </div>
-            <div class="flex items-center gap-3 text-xs text-slate-400">
-                <span class="flex items-center gap-1.5">
-                    <span class="w-2.5 h-2.5 bg-green-100 border border-green-300 rounded-sm"></span>
-                    Sudah terisi
-                </span>
-                <span class="flex items-center gap-1.5">
-                    <span class="w-2.5 h-2.5 bg-red-50 border border-red-200 rounded-sm"></span>
-                    Belum terisi
-                </span>
-            </div>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-slate-50 border-b border-slate-100">
+        {{-- Tabel --}}
+        <div class="bg-white rounded-xl shadow overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
                     <tr>
-                        <th
-                            class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-[35%]">
-                            Kabupaten/Kota
-                        </th>
-                        @foreach(['Q1', 'Q2', 'Q3', 'Q4'] as $q)
-                            <th class="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                {{ $q }}
-                            </th>
+                        <th class="px-4 py-3 text-left sticky left-0 bg-gray-50 min-w-[220px]">Sub Kategori</th>
+                        @foreach ($regions as $region)
+                            <th class="px-3 py-3 text-right whitespace-nowrap">{{ $region->name }}</th>
                         @endforeach
-                        <th class="text-center px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Status
-                        </th>
+                        <th class="px-3 py-3 text-right whitespace-nowrap bg-blue-50 text-blue-600">Total Provinsi</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach($kabkoList as $kabko)
-                        @php
-                            $row = $data[$kabko] ?? [];
-                            $terisiRow = collect($row)->filter(fn($v) => $v !== null)->count();
-                        @endphp
-                        <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                <tbody class="divide-y divide-gray-100">
 
-                            <td class="px-6 py-3 text-sm font-medium text-slate-700">
-                                {{ $kabko }}
-                            </td>
+                    @php $grandTotal = array_fill_keys($regions->pluck('id')->toArray(), 0); @endphp
 
-                            @foreach(['Q1', 'Q2', 'Q3', 'Q4'] as $q)
-                                @php $nilai = $row[$q] ?? null; @endphp
-                                <td class="px-6 py-3 text-sm text-right {{ $nilai !== null ? 'bg-green-50' : 'bg-red-50' }}">
-                                    @if($nilai !== null)
-                                        <span class="font-medium text-slate-700">
-                                            {{ number_format($nilai, 0, ',', '.') }}
-                                        </span>
-                                    @else
-                                        <span class="text-red-300 text-xs">—</span>
-                                    @endif
+                    @foreach ($rows as $row)
+
+                        @if (!empty($row['is_total']))
+                            {{-- Baris total parent --}}
+                            <tr class="bg-yellow-50 font-semibold text-gray-700">
+                                <td class="px-4 py-2 sticky left-0 bg-yellow-50 italic">
+                                    {{ $row['name'] }}
                                 </td>
-                            @endforeach
+                                @php $rowTotal = 0; @endphp
+                                @foreach ($regions as $region)
+                                    @php
+                                        $subtotal = 0;
+                                        foreach ($row['child_ids'] as $cid) {
+                                            $subtotal += $values[$cid][$region->id]->value ?? 0;
+                                        }
+                                        $rowTotal += $subtotal;
+                                    @endphp
+                                    <td class="px-3 py-2 text-right">{{ number_format($subtotal) }}</td>
+                                @endforeach
+                                <td class="px-3 py-2 text-right bg-blue-50 text-blue-700">
+                                    {{ number_format($rowTotal) }}
+                                </td>
+                            </tr>
 
-                            <td class="px-6 py-3 text-center">
-                                @if($terisiRow === 4)
-                                    <span
-                                        class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                                        Lengkap
-                                    </span>
-                                @elseif($terisiRow === 0)
-                                    <span
-                                        class="inline-flex items-center gap-1 bg-red-100 text-red-600 text-xs font-medium px-2.5 py-1 rounded-full">
-                                        <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-                                        Kosong
-                                    </span>
-                                @else
-                                    <span
-                                        class="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                                        <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
-                                        {{ $terisiRow }}/4
-                                    </span>
-                                @endif
-                            </td>
+                        @else
+                            {{-- Baris sub kategori biasa --}}
+                            <tr class="{{ $row['is_child'] ? 'hover:bg-blue-50' : 'hover:bg-blue-50 font-medium' }}">
+                                <td
+                                    class="px-4 py-2 sticky left-0 bg-white {{ $row['is_child'] ? 'pl-10 text-gray-600' : 'text-gray-800' }}">
+                                    {{ $row['is_child'] ? '— ' : '' }}{{ $row['name'] }}
+                                </td>
+                                @php $rowTotal = 0; @endphp
+                                @foreach ($regions as $region)
+                                    @php
+                                        $val = $values[$row['id']][$region->id]->value ?? 0;
+                                        $rowTotal += $val;
+                                        $grandTotal[$region->id] += $val;
+                                    @endphp
+                                    <td class="px-3 py-2 text-right text-gray-700">
+                                        {{ number_format($val) }}
+                                    </td>
+                                @endforeach
+                                <td class="px-3 py-2 text-right bg-blue-50 text-blue-700 font-semibold">
+                                    {{ number_format($rowTotal) }}
+                                </td>
+                            </tr>
+                        @endif
 
-                        </tr>
                     @endforeach
+
+                    {{-- Baris Grand Total --}}
+                    <tr class="bg-blue-600 text-white font-bold">
+                        <td class="px-4 py-3 sticky left-0 bg-blue-600">Total Kabko</td>
+                        @php $totalProvinsi = 0; @endphp
+                        @foreach ($regions as $region)
+                            @php $totalProvinsi += $grandTotal[$region->id]; @endphp
+                            <td class="px-3 py-3 text-right">{{ number_format($grandTotal[$region->id]) }}</td>
+                        @endforeach
+                        <td class="px-3 py-3 text-right bg-blue-800">{{ number_format($totalProvinsi) }}</td>
+                    </tr>
+
                 </tbody>
             </table>
         </div>
 
     </div>
-
 @endsection

@@ -2,78 +2,75 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kategori;
+use App\Models\Region;
+use App\Models\VariableValue;
 use Illuminate\Http\Request;
 
 class MonitoringController extends Controller
 {
-    private $indikator = [
-        ['kode' => 'pertanian', 'nama' => 'Pertanian, Kehutanan, dan Perikanan'],
-        ['kode' => 'pertambangan', 'nama' => 'Pertambangan dan Penggalian'],
-        ['kode' => 'industri', 'nama' => 'Industri Pengolahan'],
-        ['kode' => 'listrik', 'nama' => 'Pengadaan Listrik dan Gas'],
-        ['kode' => 'air', 'nama' => 'Pengadaan Air dan Pengelolaan Sampah'],
-        ['kode' => 'konstruksi', 'nama' => 'Konstruksi'],
-        ['kode' => 'perdagangan', 'nama' => 'Perdagangan Besar dan Eceran'],
-        ['kode' => 'transportasi', 'nama' => 'Transportasi dan Pergudangan'],
-        ['kode' => 'akomodasi', 'nama' => 'Penyediaan Akomodasi dan Makan Minum'],
-        ['kode' => 'informasi', 'nama' => 'Informasi dan Komunikasi'],
-        ['kode' => 'keuangan', 'nama' => 'Jasa Keuangan'],
-        ['kode' => 'realestate', 'nama' => 'Real Estate'],
-        ['kode' => 'perusahaan', 'nama' => 'Jasa Perusahaan'],
-        ['kode' => 'pemerintahan', 'nama' => 'Administrasi Pemerintahan'],
-        ['kode' => 'pendidikan', 'nama' => 'Jasa Pendidikan'],
-        ['kode' => 'kesehatan', 'nama' => 'Jasa Kesehatan'],
-        ['kode' => 'lainnya', 'nama' => 'Jasa Lainnya'],
-    ];
-
-    private $kabkoList = [
-        'Kotawaringin Barat',
-        'Kotawaringin Timur',
-        'Kapuas',
-        'Barito Selatan',
-        'Barito Utara',
-        'Katingan',
-        'Seruyan',
-        'Sukamara',
-        'Lamandau',
-        'Gunung Mas',
-        'Pulang Pisau',
-        'Murung Raya',
-        'Barito Timur',
-        'Palangka Raya',
-    ];
-
-    private function generateDummy($indikator, $tahun)
-    {
-        $data = [];
-        foreach ($this->kabkoList as $kabko) {
-            foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $q) {
-                // acak: kadang null (belum isi), kadang ada nilai
-                $data[$kabko][$q] = rand(0, 3) > 0
-                    ? rand(100000000, 9999999999)
-                    : null;
-            }
-        }
-        return $data;
-    }
-
     public function index(Request $request)
     {
-        $selectedIndikator = $request->get('indikator', $this->indikator[0]['kode']);
-        $selectedTahun = $request->get('tahun', 2025);
+        $kategoris = Kategori::orderBy('urutan')->get();
+        $regions = Region::where('tipe', '!=', 'provinsi')->orderBy('kode_bps')->get();
 
-        $indikatorAktif = collect($this->indikator)->firstWhere('kode', $selectedIndikator);
-        $data = $this->generateDummy($selectedIndikator, $selectedTahun);
-        $tahunList = range(2018, 2025);
+        $kategoriId = $request->input('kategori_id', $kategoris->first()->id);
+        $tahun = $request->input('tahun', 2025);
+        $triwulan = $request->input('triwulan', 1);
 
-        return view('monitoring.index', [
-            'indikator' => $this->indikator,
-            'kabkoList' => $this->kabkoList,
-            'selectedIndikator' => $selectedIndikator,
-            'selectedTahun' => $selectedTahun,
-            'indikatorAktif' => $indikatorAktif,
-            'data' => $data,
-            'tahunList' => $tahunList,
-        ]);
+        $kategori = Kategori::with([
+            'subKategoris.children'
+        ])->findOrFail($kategoriId);
+
+        // Kumpulkan semua leaf sub kategori (flat, dengan info parent)
+        $rows = collect();
+        foreach ($kategori->subKategoris as $sub) {
+            if ($sub->children->isNotEmpty()) {
+                foreach ($sub->children as $child) {
+                    $rows->push([
+                        'id' => $child->id,
+                        'name' => $child->name,
+                        'parent_name' => $sub->name,
+                        'is_child' => true,
+                    ]);
+                }
+                // Tambah baris total parent
+                $rows->push([
+                    'id' => 'total_' . $sub->id,
+                    'name' => 'Total ' . $sub->name,
+                    'parent_name' => null,
+                    'is_total' => true,
+                    'child_ids' => $sub->children->pluck('id'),
+                ]);
+            } else {
+                $rows->push([
+                    'id' => $sub->id,
+                    'name' => $sub->name,
+                    'parent_name' => null,
+                    'is_child' => false,
+                ]);
+            }
+        }
+
+        // Ambil semua leaf ids
+        $leafIds = $rows->where('is_total', '!=', true)->pluck('id');
+
+        // Ambil values: [sub_kategori_id][region_id] => value
+        $values = VariableValue::whereIn('sub_kategori_id', $leafIds)
+            ->where('tahun', $tahun)
+            ->where('triwulan', $triwulan)
+            ->get()
+            ->groupBy('sub_kategori_id')
+            ->map(fn($g) => $g->keyBy('region_id'));
+
+        return view('monitoring.index', compact(
+            'kategoris',
+            'regions',
+            'kategori',
+            'tahun',
+            'triwulan',
+            'rows',
+            'values'
+        ));
     }
 }

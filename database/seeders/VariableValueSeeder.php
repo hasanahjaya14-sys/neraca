@@ -9,7 +9,6 @@ class VariableValueSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ambil hanya sub kategori yang tidak punya children (leaf nodes)
         $leafIds = DB::table('sub_kategoris as s')
             ->leftJoin('sub_kategoris as c', 'c.parent_id', '=', 's.id')
             ->whereNull('c.id')
@@ -19,7 +18,7 @@ class VariableValueSeeder extends Seeder
             ->where('tipe', '!=', 'provinsi')
             ->pluck('id');
 
-        $tahuns = range(2018, 2025);
+        $tahuns = range(2018, 2030);
         $triwulans = [1, 2, 3, 4];
 
         $batch = [];
@@ -39,9 +38,8 @@ class VariableValueSeeder extends Seeder
                             'updated_at' => $now,
                         ];
 
-                        // Insert per 500 biar tidak overload memory
                         if (count($batch) >= 500) {
-                            DB::table('variable_values')->insert($batch);
+                            DB::table('variable_values')->insertOrIgnore($batch);
                             $batch = [];
                         }
                     }
@@ -50,7 +48,7 @@ class VariableValueSeeder extends Seeder
         }
 
         if (!empty($batch)) {
-            DB::table('variable_values')->insert($batch);
+            DB::table('variable_values')->insertOrIgnore($batch);
         }
     }
 }

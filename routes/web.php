@@ -33,10 +33,9 @@ Route::middleware('auth')->group(function () {
     });
 
     // Pengisian
-    Route::prefix('pengisian')->name('pengisian.')->group(function () {
-        Route::get('/', [PengisianController::class, 'index'])->name('index');
-        Route::get('/{kode}', [PengisianController::class, 'show'])->name('show');
-    });
+    Route::get('/pengisian', [PengisianController::class, 'index'])->name('pengisian.index');
+    Route::get('/pengisian/{id}', [PengisianController::class, 'show'])->name('pengisian.show');
+    Route::post('/pengisian/{id}', [PengisianController::class, 'store'])->name('pengisian.store');
 
     // Rekonsiliasi
     Route::prefix('rekonsiliasi')->name('rekonsiliasi.')->group(function () {
