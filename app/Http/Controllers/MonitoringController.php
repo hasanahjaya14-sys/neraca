@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Kategori;
 use App\Models\Region;
-use App\Models\VariableValue;
+use App\Models\SubKategoriValue;
+
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MonitoringController extends Controller
 {
@@ -13,10 +15,24 @@ class MonitoringController extends Controller
     {
         $kategoris = Kategori::orderBy('urutan')->get();
         $regions = Region::where('tipe', '!=', 'provinsi')->orderBy('kode_bps')->get();
+        $tahunMin = config('pdrb.tahun_mulai');
+        $tahunMax = config('pdrb.tahun_akhir');
 
         $kategoriId = $request->input('kategori_id', $kategoris->first()->id);
-        $tahun = $request->input('tahun', 2025);
-        $triwulan = $request->input('triwulan', 1);
+        $triwulanSekarang = (int) ceil(now()->month / 3);
+        $tahunSekarang = (int) now()->year;
+
+        if ($triwulanSekarang === 1) {
+            $triwulanAktif = 4;
+            $tahunAktif = $tahunSekarang - 1;
+        } else {
+            $triwulanAktif = $triwulanSekarang - 1;
+            $tahunAktif = $tahunSekarang;
+        }
+
+        $tahun = (int) $request->input('tahun', $tahunAktif);
+        $triwulan = (int) $request->input('triwulan', $triwulanAktif);
+        $triwulan = (int) $request->input('triwulan', 1);
 
         $kategori = Kategori::with([
             'subKategoris.children'
@@ -34,7 +50,6 @@ class MonitoringController extends Controller
                         'is_child' => true,
                     ]);
                 }
-                // Tambah baris total parent
                 $rows->push([
                     'id' => 'total_' . $sub->id,
                     'name' => 'Total ' . $sub->name,
@@ -56,7 +71,7 @@ class MonitoringController extends Controller
         $leafIds = $rows->where('is_total', '!=', true)->pluck('id');
 
         // Ambil values: [sub_kategori_id][region_id] => value
-        $values = VariableValue::whereIn('sub_kategori_id', $leafIds)
+        $values = SubKategoriValue::whereIn('sub_kategori_id', $leafIds)
             ->where('tahun', $tahun)
             ->where('triwulan', $triwulan)
             ->get()
@@ -70,7 +85,9 @@ class MonitoringController extends Controller
             'tahun',
             'triwulan',
             'rows',
-            'values'
+            'values',
+            'tahunMin',
+            'tahunMax'
         ));
     }
 }

@@ -13,21 +13,17 @@
 
         {{-- Filter --}}
         <form method="GET" class="flex gap-3 mb-6">
-            <select name="tahun" class="border rounded-lg px-3 py-2 text-sm">
-                @foreach (range(2018, 2025) as $t)
+            <select name="tahun" class="border rounded-lg px-3 py-2 text-sm" onchange="this.form.submit()">
+                @foreach (range($tahunMin, $tahunMax) as $t)
                     <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
                 @endforeach
             </select>
-            <select name="triwulan" class="border rounded-lg px-3 py-2 text-sm">
+            <select name="triwulan" class="border rounded-lg px-3 py-2 text-sm" onchange="this.form.submit()">
                 @foreach ([1, 2, 3, 4] as $tw)
                     <option value="{{ $tw }}" {{ $triwulan == $tw ? 'selected' : '' }}>Q{{ $tw }}</option>
                 @endforeach
             </select>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-                Tampilkan
-            </button>
         </form>
-
         {{-- Tabel --}}
         <div class="bg-white rounded-xl shadow overflow-x-auto">
             <table class="w-full text-sm">

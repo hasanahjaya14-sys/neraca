@@ -11,6 +11,7 @@ use App\Http\Controllers\MetadataController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PengisianTestController;
 
 // ── Auth ──────────────────────────────────────────────
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -36,6 +37,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/pengisian', [PengisianController::class, 'index'])->name('pengisian.index');
     Route::get('/pengisian/{id}', [PengisianController::class, 'show'])->name('pengisian.show');
     Route::post('/pengisian/{id}', [PengisianController::class, 'store'])->name('pengisian.store');
+
+    Route::get('/pengisian/{id}/sub/{subKategoriId}', [PengisianController::class, 'showSub'])->name('pengisian.sub');
+    Route::post('/pengisian/{id}/sub/{subKategoriId}', [PengisianController::class, 'storeSub'])->name('pengisian.storeSub');
+    Route::delete('/pengisian/sub-sub/{subSubId}', [PengisianController::class, 'destroySubSub'])->name('pengisian.destroySubSub');
+    Route::post('/pengisian/{id}/formula/{subKategoriId}', [PengisianController::class, 'storeFormula'])->name('pengisian.storeFormula');
 
     // Rekonsiliasi
     Route::prefix('rekonsiliasi')->name('rekonsiliasi.')->group(function () {

@@ -4,8 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class VariableValue extends Model
+class SubKategoriValue extends Model
 {
+    protected $table = 'sub_kategori_values';
+
     protected $fillable = ['sub_kategori_id', 'region_id', 'triwulan', 'tahun', 'value'];
 
     public function subKategori()

@@ -14,14 +14,6 @@ class SubKategoriSeeder extends Seeder
         // ── KATEGORI 1: Pertanian ──────────────────────────────────────────
         $k1 = $kategoris[1]->id;
 
-        $parent11 = DB::table('sub_kategoris')->insertGetId([
-            'kategori_id' => $k1,
-            'parent_id' => null,
-            'name' => 'Tanaman dan Hortikultura',
-            'urutan' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
         $children1 = [
             'Tanaman Pangan',
             'Tanaman Hortikultura Semusim',
@@ -30,26 +22,16 @@ class SubKategoriSeeder extends Seeder
             'Perkebunan Tahunan',
             'Peternakan',
             'Jasa Pertanian dan Perburuan',
+            'Kehutanan dan Penebangan Kayu',
+            'Perikanan',
         ];
+
         foreach ($children1 as $i => $name) {
-            DB::table('sub_kategoris')->insert([
-                'kategori_id' => $k1,
-                'parent_id' => $parent11,
-                'name' => $name,
-                'urutan' => $i + 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-        foreach ([
-            ['Kehutanan dan Penebangan Kayu', 2],
-            ['Perikanan', 3],
-        ] as [$name, $urutan]) {
             DB::table('sub_kategoris')->insert([
                 'kategori_id' => $k1,
                 'parent_id' => null,
                 'name' => $name,
-                'urutan' => $urutan,
+                'urutan' => $i + 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

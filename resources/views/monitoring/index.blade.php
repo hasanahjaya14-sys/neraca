@@ -18,7 +18,7 @@
             </select>
 
             <select name="tahun" class="border rounded-lg px-3 py-2 text-sm" onchange="this.form.submit()">
-                @foreach (range(2018, 2025) as $t)
+                @foreach (range($tahunMin, $tahunMax) as $t)
                     <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
                 @endforeach
             </select>

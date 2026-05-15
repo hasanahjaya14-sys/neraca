@@ -39,7 +39,7 @@ class VariableValueSeeder extends Seeder
                         ];
 
                         if (count($batch) >= 500) {
-                            DB::table('variable_values')->insertOrIgnore($batch);
+                            DB::table('sub_kategori_values')->insertOrIgnore($batch);
                             $batch = [];
                         }
                     }
@@ -48,7 +48,7 @@ class VariableValueSeeder extends Seeder
         }
 
         if (!empty($batch)) {
-            DB::table('variable_values')->insertOrIgnore($batch);
+            DB::table('sub_kategori_values')->insertOrIgnore($batch);
         }
     }
 }

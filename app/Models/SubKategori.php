@@ -31,4 +31,14 @@ class SubKategori extends Model
     {
         return $this->children()->exists();
     }
+
+    public function subSubKategoris()
+    {
+        return $this->hasMany(SubSubKategori::class)->orderBy('urutan');
+    }
+
+    public function subSubKategorisByRegion($regionId)
+    {
+        return $this->subSubKategoris()->where('region_id', $regionId);
+    }
 }
